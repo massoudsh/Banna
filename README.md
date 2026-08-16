@@ -48,6 +48,7 @@ scope مبهم → قیمت غیرقابل مقایسه → تغییر وسط ک
 - [نقشهٔ راه / Roadmap](./ROADMAP.md)
 - [ویکی پروژه / Project Wiki](./docs/wiki/Home.md)
 - [بک‌لاگ Issueها / Issue Backlog](./docs/issues/README.md)
+- [دانش‌نامهٔ توسعه برای ایجنت‌ها / Dev Wiki](./docs/dev-wiki/overview.md) ([AGENTS.md](./AGENTS.md))
 
 ---
 
