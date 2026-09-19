@@ -1,0 +1,53 @@
+{
+  "_comment": "WBS مرجع بازسازی ایران (Issue #3). unit=area یعنی مقدار = متراژ فضا × factor. unit=fixed یعنی مقدار ثابت ۱.",
+  "version": 1,
+  "updated": "2026-09-19",
+  "phases_order": ["demolition", "mep", "structure", "covering", "joinery", "finish"],
+  "spaces": {
+    "kitchen": {
+      "label_fa": "آشپزخانه",
+      "items": [
+        { "code": "DEM", "title": "تخریب کابینت و کاشی‌کاری قدیم", "phase": "demolition", "unit": "fixed", "depends_on": [] },
+        { "code": "MEP-P", "title": "لوله‌کشی آب و فاضلاب سینک و ماشین‌ظرفشویی", "phase": "mep", "unit": "area", "factor": 0.6, "depends_on": [] },
+        { "code": "MEP-E", "title": "برق‌کشی و پریزهای آشپزخانه", "phase": "mep", "unit": "area", "factor": 0.8, "depends_on": [] },
+        { "code": "STR", "title": "سفیدکاری و اصلاح دیوارها", "phase": "structure", "unit": "area", "factor": 2.4, "depends_on": [] },
+        { "code": "COV-T", "title": "کاشی‌کاری دیوار آشپزخانه", "phase": "covering", "unit": "area", "factor": 1.8, "depends_on": [] },
+        { "code": "COV-F", "title": "کفپوش آشپزخانه", "phase": "covering", "unit": "area", "factor": 1.0, "depends_on": [] },
+        { "code": "JOI-C", "title": "کابینت‌بندی و صفحه‌کابینت", "phase": "joinery", "unit": "area", "factor": 0.45, "depends_on": [] },
+        { "code": "FIN-P", "title": "رنگ‌آمیزی و دکور آشپزخانه", "phase": "finish", "unit": "area", "factor": 2.4, "depends_on": [] }
+      ]
+    },
+    "bathroom": {
+      "label_fa": "حمام و سرویس",
+      "items": [
+        { "code": "DEM", "title": "تخریب کاشی، سرویس و تأسیسات قدیم", "phase": "demolition", "unit": "fixed", "depends_on": [] },
+        { "code": "MEP-P", "title": "لوله‌کشی آب سرد و گرم و فاضلاب", "phase": "mep", "unit": "area", "factor": 1.2, "depends_on": [] },
+        { "code": "MEP-E", "title": "برق‌کشی و روشنایی سرویس", "phase": "mep", "unit": "area", "factor": 0.7, "depends_on": [] },
+        { "code": "STR-W", "title": "عایق‌کاری رطوبتی (ایزوگام/دوغاب)", "phase": "structure", "unit": "area", "factor": 2.4, "depends_on": [] },
+        { "code": "COV-T", "title": "کاشی‌کاری دیوار و کف سرویس", "phase": "covering", "unit": "area", "factor": 2.8, "depends_on": [] },
+        { "code": "JOI-S", "title": "نصب سرویس بهداشتی و شیرآلات", "phase": "joinery", "unit": "fixed", "depends_on": ["MEP-P"] },
+        { "code": "FIN", "title": "بندکشی و آب‌بندی نهایی", "phase": "finish", "unit": "area", "factor": 1.4, "depends_on": [] }
+      ]
+    },
+    "living_room": {
+      "label_fa": "نشیمن و پذیرایی",
+      "items": [
+        { "code": "MEP-E", "title": "برق‌کشی، پریز و نورپردازی", "phase": "mep", "unit": "area", "factor": 0.9, "depends_on": [] },
+        { "code": "STR", "title": "سفیدکاری و اصلاح دیوار و سقف", "phase": "structure", "unit": "area", "factor": 2.6, "depends_on": [] },
+        { "code": "COV-F", "title": "کفپوش (پارکت/لمینت/سرامیک)", "phase": "covering", "unit": "area", "factor": 1.0, "depends_on": [] },
+        { "code": "FIN-P", "title": "رنگ‌آمیزی دیوار و سقف", "phase": "finish", "unit": "area", "factor": 2.6, "depends_on": [] },
+        { "code": "FIN-D", "title": "دکور، پرده و نورپردازی نهایی", "phase": "finish", "unit": "area", "factor": 0.5, "depends_on": [] }
+      ]
+    },
+    "bedroom": {
+      "label_fa": "اتاق خواب",
+      "items": [
+        { "code": "MEP-E", "title": "برق‌کشی و پریزهای اتاق", "phase": "mep", "unit": "area", "factor": 0.7, "depends_on": [] },
+        { "code": "STR", "title": "سفیدکاری دیوار و سقف", "phase": "structure", "unit": "area", "factor": 2.4, "depends_on": [] },
+        { "code": "COV-F", "title": "کفپوش اتاق (پارکت/لمینت)", "phase": "covering", "unit": "area", "factor": 1.0, "depends_on": [] },
+        { "code": "JOI-D", "title": "درب و کمد دیواری", "phase": "joinery", "unit": "fixed", "depends_on": [] },
+        { "code": "FIN-P", "title": "رنگ‌آمیزی اتاق", "phase": "finish", "unit": "area", "factor": 2.4, "depends_on": [] }
+      ]
+    }
+  }
+}
