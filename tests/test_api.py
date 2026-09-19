@@ -203,3 +203,71 @@ class TestOpenApi:
         paths = res.json()["paths"]
         assert "/api/projects" in paths
         assert "/api/projects/{project_id}/brief" in paths
+        assert "/api/projects/{project_id}/quotes" in paths
+
+
+
+
+class TestContractorsAndChecklist:
+    def test_contractor_ranking_is_transparent(self, client):
+        profile = {
+            "contractor_id": "C1", "name": "مجری خوب", "city": "تهران",
+            "specialties": ["kitchen"], "verified": True, "completed_projects": 4,
+        }
+        assert client.post("/api/contractors", json=profile).status_code == 201
+        review = {"contractor_id": "C1", "project_id": "P1", "rating": 5, "on_time": True}
+        assert client.post("/api/contractors/C1/reviews", json=review).status_code == 201
+        ranking = client.get("/api/contractors/ranking")
+        assert ranking.status_code == 200
+        assert ranking.json()[0]["contractor_id"] == "C1"
+        assert ranking.json()[0]["score"] > 0
+        assert ranking.json()[0]["explanation"]
+
+    def test_checklist_tracks_wbs_and_rejects_unknown_codes(self, client):
+        created = _create(client)
+        response = client.get(f"/api/projects/{created['project_id']}/checklist")
+        assert response.status_code == 200
+        assert len(response.json()["items"]) == len(created["wbs_items"])
+        invalid = {"project_id": created["project_id"], "items": [{"wbs_code": "UNKNOWN", "status": "done"}]}
+        response = client.put(f"/api/projects/{created['project_id']}/checklist", json=invalid)
+        assert response.status_code == 422
+
+    def test_checklist_records_change_order(self, client):
+        created = _create(client)
+        code = created["wbs_items"][0]["code"]
+        payload = {"project_id": created["project_id"], "items": [{"wbs_code": code, "status": "done", "change_order_toman": 5000000, "change_order_days": 2}]}
+        response = client.put(f"/api/projects/{created['project_id']}/checklist", json=payload)
+        assert response.status_code == 200
+        assert response.json()["items"][0]["change_order_toman"] == 5000000
+
+
+class TestQuoteEndpoints:
+    def test_quote_comparison_reaches_brief(self, client):
+        created = _create(client)
+        first = created["wbs_items"][0]
+        quote = {
+            "contractor_id": "M1",
+            "contractor_name": "مجری نمونه",
+            "lines": [{"code": first["code"], "price_toman": 1}],
+        }
+
+        comparison = client.post(f"/api/projects/{created['project_id']}/quotes", json=quote)
+        assert comparison.status_code == 201, comparison.text
+        data = comparison.json()
+        assert data["quotes"][0]["contractor_id"] == "M1"
+        assert not data["quotes"][0]["is_comparable"]
+
+        brief = client.get(created["brief_url"])
+        assert brief.status_code == 200
+        assert "مقایسهٔ قیمت مجریان" in brief.text
+        assert "مجری نمونه" in brief.text
+
+    def test_quote_comparison_missing_project_is_404(self, client):
+        quote = {"contractor_id": "M1", "total_toman": 100_000_000}
+        response = client.post("/api/projects/missing/quotes", json=quote)
+        assert response.status_code == 404
+
+    def test_quote_comparison_without_quotes_is_404(self, client):
+        created = _create(client)
+        response = client.get(f"/api/projects/{created['project_id']}/quotes")
+        assert response.status_code == 404

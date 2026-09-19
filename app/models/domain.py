@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from enum import Enum
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -254,3 +256,53 @@ class QuoteComparison(BaseModel):
     spread_pct: float = 0.0
     """پراکندگی quoteهای قابل‌مقایسه — بیش از ۳۰٪ یعنی مبنای مقایسه بی‌ثبات."""
     spread_is_stable: bool = True
+
+
+class ContractorProfile(BaseModel):
+    """پروفایل مجری برای matching و رتبه‌بندی (Issue #14)."""
+
+    contractor_id: str
+    name: str
+    city: str
+    specialties: list[SpaceType] = Field(default_factory=list)
+    completed_projects: int = Field(default=0, ge=0)
+    verified: bool = False
+    years_experience: int = Field(default=0, ge=0)
+
+
+class ContractorReview(BaseModel):
+    """بازخورد کارفرما دربارهٔ کیفیت اجرای مجری."""
+
+    contractor_id: str
+    project_id: str
+    rating: float = Field(ge=1, le=5)
+    on_time: bool
+    comment: str = ""
+
+
+class ContractorRanking(BaseModel):
+    """امتیاز شفاف مجری بر پایهٔ داده‌های پروفایل و بازخورد."""
+
+    contractor_id: str
+    score: float
+    review_count: int
+    verified: bool
+    explanation: list[str] = Field(default_factory=list)
+
+
+class ChecklistItem(BaseModel):
+    """وضعیت اجرای یک آیتم WBS (Issue #16)."""
+
+    wbs_code: str
+    status: Literal["pending", "in_progress", "done", "blocked"] = "pending"
+    note: str = ""
+    evidence_filenames: list[str] = Field(default_factory=list)
+    change_order_toman: int = 0
+    change_order_days: int = 0
+
+
+class ProjectExecutionChecklist(BaseModel):
+    """چک‌لیست پروژه با وضعیت آیتم‌های WBS و تغییرات ثبت‌شده."""
+
+    project_id: str
+    items: list[ChecklistItem] = Field(default_factory=list)

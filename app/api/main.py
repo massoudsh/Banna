@@ -24,6 +24,8 @@ from app.api.schemas import (
     WBSItemOut,
 )
 from app.engines import brief as brief_engine
+from app.engines import quote as quote_engine
+from app.engines import contractor as contractor_engine
 from app.engines.media import MediaValidationError, store_asset, validate_request
 from app.engines.scope import ScopeError
 from app.engines.wbs import WBSError
@@ -31,7 +33,14 @@ from app.models.domain import (
     PHASE_LABELS_FA,
     SCENARIO_LABELS_FA,
     WorkPhase,
+    ContractorQuote,
+    QuoteComparison,
     SpaceType,
+    ContractorProfile,
+    ContractorReview,
+    ContractorRanking,
+    ProjectExecutionChecklist,
+    ChecklistItem,
 )
 from app.pipeline import PipelineResult, run
 
@@ -62,6 +71,10 @@ app.include_router(ui.router)
 # حافظهٔ موقت پروژه‌ها (MVP). کلید: project_id
 _PROJECTS: dict[str, PipelineResult] = {}
 _TITLES: dict[str, str] = {}
+_QUOTES: dict[str, list[ContractorQuote]] = {}
+_CONTRACTORS: dict[str, ContractorProfile] = {}
+_REVIEWS: list[ContractorReview] = []
+_CHECKLISTS: dict[str, ProjectExecutionChecklist] = {}
 
 
 @app.exception_handler(MediaValidationError)
@@ -160,14 +173,91 @@ async def get_project(project_id: str) -> ProjectOut:
     return _to_out(project_id, result, _TITLES.get(project_id, "پروژهٔ بازسازی"))
 
 
+@app.get("/api/projects/{project_id}/quotes", response_model=QuoteComparison)
+async def get_quote_comparison(project_id: str) -> QuoteComparison:
+    """مقایسهٔ quoteهای ثبت‌شده با سناریوی انتخابی پروژه."""
+    result = _PROJECTS.get(project_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="پروژه پیدا نشد.")
+    quotes = _QUOTES.get(project_id, [])
+    if not quotes:
+        raise HTTPException(status_code=404, detail="هنوز quoteی برای این پروژه ثبت نشده است.")
+    baseline = quote_engine.baseline_for(result.scenarios, result.selected)
+    return quote_engine.compare(quotes, result.wbs, baseline)
+
+
+@app.post("/api/projects/{project_id}/quotes", response_model=QuoteComparison, status_code=201)
+async def add_contractor_quote(project_id: str, quote: ContractorQuote) -> QuoteComparison:
+    """ثبت quote یک مجری و بازگرداندن مقایسهٔ به‌روز با WBS."""
+    result = _PROJECTS.get(project_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="پروژه پیدا نشد.")
+    project_quotes = _QUOTES.setdefault(project_id, [])
+    project_quotes[:] = [q for q in project_quotes if q.contractor_id != quote.contractor_id]
+    project_quotes.append(quote)
+    baseline = quote_engine.baseline_for(result.scenarios, result.selected)
+    return quote_engine.compare(project_quotes, result.wbs, baseline)
+
+
+@app.post("/api/contractors", response_model=ContractorProfile, status_code=201)
+async def create_contractor(profile: ContractorProfile) -> ContractorProfile:
+    _CONTRACTORS[profile.contractor_id] = profile
+    return profile
+
+
+@app.post("/api/contractors/{contractor_id}/reviews", response_model=ContractorReview, status_code=201)
+async def add_contractor_review(contractor_id: str, review: ContractorReview) -> ContractorReview:
+    if contractor_id not in _CONTRACTORS or review.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="مجری پیدا نشد.")
+    _REVIEWS.append(review)
+    return review
+
+
+@app.get("/api/contractors/ranking", response_model=list[ContractorRanking])
+async def get_contractor_ranking() -> list[ContractorRanking]:
+    return contractor_engine.rank(list(_CONTRACTORS.values()), _REVIEWS)
+
+
+@app.get("/api/projects/{project_id}/checklist", response_model=ProjectExecutionChecklist)
+async def get_checklist(project_id: str) -> ProjectExecutionChecklist:
+    result = _PROJECTS.get(project_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="پروژه پیدا نشد.")
+    return _CHECKLISTS.setdefault(
+        project_id,
+        ProjectExecutionChecklist(
+            project_id=project_id,
+            items=[ChecklistItem(wbs_code=item.code) for item in result.wbs.ordered()],
+        ),
+    )
+
+
+@app.put("/api/projects/{project_id}/checklist", response_model=ProjectExecutionChecklist)
+async def update_checklist(project_id: str, checklist: ProjectExecutionChecklist) -> ProjectExecutionChecklist:
+    result = _PROJECTS.get(project_id)
+    if result is None or checklist.project_id != project_id:
+        raise HTTPException(status_code=404, detail="پروژه پیدا نشد.")
+    valid_codes = {item.code for item in result.wbs.items}
+    if any(item.wbs_code not in valid_codes for item in checklist.items):
+        raise HTTPException(status_code=422, detail="چک‌لیست شامل کد WBS ناشناخته است.")
+    _CHECKLISTS[project_id] = checklist
+    return checklist
+
+
 @app.get("/api/projects/{project_id}/brief", response_class=HTMLResponse)
 async def get_brief(project_id: str) -> HTMLResponse:
     """Brief نهایی به‌صورت HTML فارسی/RTL — آمادهٔ چاپ یا تبدیل به PDF."""
     result = _PROJECTS.get(project_id)
     if result is None:
         raise HTTPException(status_code=404, detail="پروژه پیدا نشد.")
+    quotes = _QUOTES.get(project_id, [])
+    comparison = None
+    if quotes:
+        baseline = quote_engine.baseline_for(result.scenarios, result.selected)
+        comparison = quote_engine.compare(quotes, result.wbs, baseline)
     html = brief_engine.render(
-        result.to_brief(_TITLES.get(project_id, "پروژهٔ بازسازی"))
+        result.to_brief(_TITLES.get(project_id, "پروژهٔ بازسازی")),
+        comparison,
     )
     return HTMLResponse(content=html)
 
