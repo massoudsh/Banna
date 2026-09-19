@@ -17,6 +17,9 @@ dist/
 __pycache__/
 *.pyc
 
+# خروجی کامپایل تست‌های JS (بازتولید: npm run test:js)
+.test-build/
+
 # Generated artifacts (briefs — قابل بازتولید)
 outputs/*
 uploads/

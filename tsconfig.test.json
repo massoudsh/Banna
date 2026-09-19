@@ -5,6 +5,8 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "allowImportingTsExtensions": false,
+    "allowJs": true,
+    "checkJs": false,
     "noEmit": false,
     "outDir": ".test-build",
     "rootDir": ".",

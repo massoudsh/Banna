@@ -3,7 +3,7 @@ import {
   isBridgeConfigured,
   runPipeline,
   type PipelineResult,
-} from './python-bridge.ts';
+} from './python-bridge';
 
 /**
  * نگاشت خروجی موتور پایتون به مدل نمایشی UI.

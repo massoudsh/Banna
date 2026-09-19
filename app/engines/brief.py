@@ -11,6 +11,8 @@ from html import escape
 
 from app.models.domain import (
     PHASE_LABELS_FA,
+    SCENARIO_LABELS_FA,
+    QuoteComparison,
     RenovationBrief,
     Scenario,
     ScenarioKind,
@@ -93,8 +95,66 @@ def _assumptions_section(brief: RenovationBrief) -> str:
     </section>"""
 
 
-def render(brief: RenovationBrief) -> str:
-    """تولید HTML سند Brief."""
+def _quote_comparison_section(comparison: QuoteComparison | None) -> str:
+    """جدول مقایسهٔ quote مجریان با تخمین پایه (Issue #15)."""
+    if comparison is None or not comparison.quotes:
+        return ""
+
+    rows = []
+    for q in sorted(comparison.quotes, key=lambda x: x.total_toman):
+        deviation = f"{q.deviation_pct:+.1f}%"
+        if q.is_comparable:
+            badge = '<span class="badge">قابل‌مقایسه</span>'
+        else:
+            badge = '<span class="badge warn">ناقص — قابل‌مقایسه نیست</span>'
+        rows.append(
+            f"""
+      <tr>
+        <td>{escape(q.contractor_name)}</td>
+        <td>{format_toman(q.total_toman)}</td>
+        <td>{deviation}</td>
+        <td>{q.coverage_pct:.0f}%</td>
+        <td>{badge}</td>
+      </tr>"""
+        )
+
+    spread_note = (
+        "پراکندگی quoteها در محدودهٔ قابل‌قبول است."
+        if comparison.spread_is_stable
+        else (
+            f"پراکندگی quoteها {comparison.spread_pct:.0f}٪ است — بیش از آستانهٔ "
+            "۳۰٪. یعنی مجریان کار یکسانی را قیمت نداده‌اند؛ پیش از تصمیم، "
+            "تفاوت آیتم‌ها را بررسی کنید."
+        )
+    )
+
+    detail = ""
+    for q in comparison.quotes:
+        if not q.notes:
+            continue
+        notes = "".join(f"<li>{escape(n)}</li>" for n in q.notes)
+        detail += f"<p><strong>{escape(q.contractor_name)}</strong></p><ul class=\"assumptions\">{notes}</ul>"
+
+    return f"""
+    <section>
+      <h2>مقایسهٔ قیمت مجریان</h2>
+      <p>مبنای مقایسه: سناریوی «{escape(SCENARIO_LABELS_FA[comparison.baseline_kind])}» با بازهٔ
+         {format_toman(comparison.baseline_min_toman)} تا {format_toman(comparison.baseline_max_toman)}.
+         انحراف نسبت به میانهٔ همین بازه محاسبه شده است.</p>
+      <table>
+        <tr><th>مجری</th><th>مبلغ کل</th><th>انحراف از تخمین</th><th>پوشش آیتم‌ها</th><th>وضعیت</th></tr>{"".join(rows)}
+      </table>
+      <p>{escape(spread_note)}</p>
+      {detail}
+    </section>"""
+
+
+def render(brief: RenovationBrief, comparison: QuoteComparison | None = None) -> str:
+    """تولید HTML سند Brief.
+
+    `comparison` اختیاری است — سند پایه بدون quote هم معتبر است؛ بخش مقایسه
+    فقط وقتی اضافه می‌شود که کارفرما quote دریافت کرده باشد.
+    """
     selected = next(
         (s for s in brief.scenarios if s.kind == brief.selected),
         brief.scenarios[0] if brief.scenarios else None,
@@ -166,6 +226,8 @@ def render(brief: RenovationBrief) -> str:
       <tr><th>فاز</th><th>فضا</th><th>شرح کار</th><th>مقدار</th><th>متریال پیشنهادی</th></tr>{_items_rows(brief)}
     </table>
   </section>
+
+  {_quote_comparison_section(comparison)}
 
   {_assumptions_section(brief)}
 

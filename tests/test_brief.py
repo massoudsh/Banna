@@ -152,3 +152,100 @@ class TestRender:
     def test_render_is_deterministic(self):
         brief = _brief()
         assert render(brief) == render(brief)
+
+
+class TestQuoteComparisonSection:
+    """بخش مقایسهٔ quote (Issue #15) — اختیاری و بدون شکستن سند پایه."""
+
+    def _scenarios(self):
+        return _brief()
+
+    def _quote_for(self, brief, cid, name, multiplier):
+        from app.engines.quote import baseline_for
+        from app.models.domain import ContractorQuote, QuoteLine
+
+        baseline = baseline_for(brief.scenarios, brief.selected)
+        lines = []
+        for item in brief.wbs.ordered():
+            cl = next(l for l in baseline.estimate.lines if l.wbs_code == item.code)
+            lines.append(
+                QuoteLine(
+                    code=item.code,
+                    price_toman=int(((cl.total_min + cl.total_max) / 2) * multiplier),
+                )
+            )
+        return ContractorQuote(contractor_id=cid, contractor_name=name, lines=lines)
+
+    def _session(self):
+        from app.engines.quote import baseline_for, compare
+
+        brief = _brief()
+        baseline = baseline_for(brief.scenarios, brief.selected)
+        quotes = [
+            self._quote_for(brief, "A", "مجری احمدی", 0.92),
+            self._quote_for(brief, "B", "مجری رضایی", 1.12),
+        ]
+        return brief, compare(quotes, brief.wbs, baseline)
+
+    def test_base_render_omits_the_section(self):
+        """سند بدون quote باید مثل قبل باشد — سازگاری عقب‌رو."""
+        html = render(_brief())
+        assert "مقایسهٔ قیمت مجریان" not in html
+
+    def test_section_lists_every_contractor(self):
+        brief, comparison = self._session()
+        html = render(brief, comparison)
+        assert "مجری احمدی" in html
+        assert "مجری رضایی" in html
+
+    def test_section_names_the_baseline_scenario(self):
+        brief, comparison = self._session()
+        html = render(brief, comparison)
+        assert "استاندارد" in html
+
+    def test_incomplete_quote_is_flagged_not_shown_as_cheapest(self):
+        from app.engines.quote import baseline_for, compare
+        from app.models.domain import ContractorQuote, QuoteLine
+
+        brief = _brief()
+        baseline = baseline_for(brief.scenarios, brief.selected)
+        partial = ContractorQuote(
+            contractor_id="P",
+            contractor_name="مجری ناقص",
+            lines=[QuoteLine(code=brief.wbs.ordered()[0].code, price_toman=1_000_000)],
+        )
+        full = self._quote_for(brief, "A", "مجری کامل", 1.0)
+        html = render(brief, compare([full, partial], brief.wbs, baseline))
+
+        assert "قابل‌مقایسه نیست" in html
+        assert "قابل‌مقایسه" in html
+
+    def test_unstable_spread_is_warned(self):
+        from app.engines.quote import baseline_for, compare
+
+        brief = _brief()
+        baseline = baseline_for(brief.scenarios, brief.selected)
+        quotes = [
+            self._quote_for(brief, "X", "مجری الف", 0.6),
+            self._quote_for(brief, "Y", "مجری ب", 1.4),
+        ]
+        html = render(brief, compare(quotes, brief.wbs, baseline))
+        assert "آستانهٔ" in html
+
+    def test_contractor_name_is_escaped(self):
+        from app.engines.quote import baseline_for, compare
+        from app.models.domain import ContractorQuote
+
+        brief = _brief()
+        baseline = baseline_for(brief.scenarios, brief.selected)
+        evil = ContractorQuote(
+            contractor_id="E", contractor_name="<script>alert(1)</script>", total_toman=500_000_000
+        )
+        html = render(brief, compare([evil], brief.wbs, baseline))
+        assert "<script>alert(1)</script>" not in html
+
+    def test_tables_stay_well_formed_with_comparison(self):
+        brief, comparison = self._session()
+        html = render(brief, comparison)
+        assert html.count("<table>") == html.count("</table>")
+        assert html.count("<tr>") == html.count("</tr>")

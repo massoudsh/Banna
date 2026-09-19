@@ -180,3 +180,77 @@ class RenovationBrief(BaseModel):
     wbs: WBS
     scenarios: list[Scenario] = Field(default_factory=list)
     selected: ScenarioKind = ScenarioKind.STANDARD
+
+
+class QuoteLine(BaseModel):
+    """یک ردیف quote خام از مجری — بر پایهٔ کد WBS (Issue #15)."""
+
+    code: str
+    price_toman: int = Field(ge=0)
+    note: str = ""
+
+
+class ContractorQuote(BaseModel):
+    """quote یک مجری روی Brief استاندارد (Issue #15)."""
+
+    contractor_id: str
+    contractor_name: str = ""
+    lines: list[QuoteLine] = Field(default_factory=list)
+    total_toman: int | None = None
+    """اگر مجری فقط مبلغ کل اعلام کند (quote کلی)؛ در این حالت نشان می‌دهیم
+    قابل‌مقایسهٔ ردیفی نیست ولی برای مقایسهٔ کل معتبر است."""
+    validity_days: int | None = None
+    note: str = ""
+
+
+class NormalizedQuoteLine(BaseModel):
+    """یک ردیف quote پس از تطبیق با WBS و مقایسه با تخمین پایه."""
+
+    code: str
+    title: str
+    phase: WorkPhase
+    space: SpaceType
+    unit: str
+    quantity: float
+    price_toman: int
+    estimate_min_toman: int
+    estimate_max_toman: int
+    deviation_pct: float
+    """انحراف درصدی از میانهٔ بازهٔ تخمین؛ مثبت = گران‌تر از تخمین."""
+    within_estimate_range: bool
+
+
+class NormalizedQuote(BaseModel):
+    """quote نرمال‌شدهٔ یک مجری، آمادهٔ مقایسهٔ apple-to-apple."""
+
+    contractor_id: str
+    contractor_name: str
+    total_toman: int
+    lines: list[NormalizedQuoteLine] = Field(default_factory=list)
+    missing_codes: list[str] = Field(default_factory=list)
+    unknown_codes: list[str] = Field(default_factory=list)
+    duplicate_codes: list[str] = Field(default_factory=list)
+    itemized: bool = False
+    """اگر مجری ردیفی قیمت نداده باشد، quote کلی است."""
+    deviation_pct: float = 0.0
+    """انحراف مبلغ کل از میانهٔ بازهٔ سناریوی پایه."""
+    coverage_pct: float = 0.0
+    """چند درصد از آیتم‌های WBS قیمت گرفته‌اند."""
+    is_comparable: bool = False
+    """quote ناقص قابل‌مقایسه نیست؛ جمع کمتر، مجری را بی‌دلیل ارزان نشان می‌دهد."""
+    notes: list[str] = Field(default_factory=list)
+
+
+class QuoteComparison(BaseModel):
+    """نتیجهٔ مقایسهٔ همهٔ quoteها در برابر تخمین پایه (Issue #15)."""
+
+    baseline_kind: ScenarioKind
+    baseline_min_toman: int
+    baseline_max_toman: int
+    baseline_median_toman: int
+    quotes: list[NormalizedQuote] = Field(default_factory=list)
+    cheapest_comparable_id: str | None = None
+    highest_comparable_id: str | None = None
+    spread_pct: float = 0.0
+    """پراکندگی quoteهای قابل‌مقایسه — بیش از ۳۰٪ یعنی مبنای مقایسه بی‌ثبات."""
+    spread_is_stable: bool = True
