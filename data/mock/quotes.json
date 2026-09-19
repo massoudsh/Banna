@@ -1,0 +1,116 @@
+{
+  "_comment": "دادهٔ ساختگی (synthetic) برای اعتبارسنجی ابزار محاسبهٔ معیارهای پذیرش. quoteها از هیچ مجری واقعی گرفته نشده‌اند و جای اجرای میدانی Issue #13 را نمی‌گیرند.",
+  "synthetic": true,
+  "created": "2026-09-19",
+  "currency": "toman",
+  "method": "quoteها حول بازهٔ تخمین با انحراف عمدی ساخته شده‌اند تا هم موارد موفق، هم پروژهٔ پرت و هم پروژهٔ با مبنای بی‌ثبات را پوشش دهند.",
+  "projects": [
+    {
+      "id": "P01",
+      "description": "بازسازی کامل آپارتمان همه فضاها",
+      "area_m2": 60,
+      "tier": "standard",
+      "quotes_toman": [430000000, 520000000],
+      "qualitative_ok": true
+    },
+    {
+      "id": "P02",
+      "description": "آشپزخانه و حمام بازسازی کامل",
+      "area_m2": 80,
+      "tier": "standard",
+      "quotes_toman": [620000000, 700000000, 760000000],
+      "qualitative_ok": true
+    },
+    {
+      "id": "P03",
+      "description": "فقط سرویس بازسازی کامل",
+      "area_m2": 100,
+      "tier": "standard",
+      "quotes_toman": [480000000, 560000000],
+      "qualitative_ok": true
+    },
+    {
+      "id": "P04",
+      "description": "آشپزخانه و نشیمن بازسازی کامل، کابینت و کفپوش",
+      "area_m2": 100,
+      "tier": "standard",
+      "quotes_toman": [250000000, 420000000],
+      "qualitative_ok": true
+    },
+    {
+      "id": "P05",
+      "description": "حمام و اتاق خواب بازسازی کامل",
+      "area_m2": 95,
+      "tier": "standard",
+      "quotes_toman": [300000000, 355000000, 390000000],
+      "qualitative_ok": true
+    },
+    {
+      "id": "P06",
+      "description": "نشیمن و پذیرایی بازسازی کامل",
+      "area_m2": 85,
+      "tier": "standard",
+      "quotes_toman": [230000000, 265000000],
+      "qualitative_ok": false
+    },
+    {
+      "id": "P07",
+      "description": "اتاق خواب بازسازی کامل",
+      "area_m2": 120,
+      "tier": "standard",
+      "quotes_toman": [210000000, 250000000],
+      "qualitative_ok": false
+    },
+    {
+      "id": "P08",
+      "description": "آشپزخانه بازسازی کامل، کابینت و کاشی",
+      "area_m2": 105,
+      "tier": "standard",
+      "quotes_toman": [880000000, 960000000, 1050000000],
+      "qualitative_ok": true
+    },
+    {
+      "id": "P09",
+      "description": "بازسازی کامل آپارتمان همه فضاها",
+      "area_m2": 130,
+      "tier": "standard",
+      "quotes_toman": [1100000000, 1250000000],
+      "qualitative_ok": true
+    },
+    {
+      "id": "P10",
+      "description": "آشپزخانه و حمام و نشیمن بازسازی کامل",
+      "area_m2": 70,
+      "tier": "standard",
+      "quotes_toman": [175000000, 195000000],
+      "qualitative_ok": true
+    }
+  ],
+  "qualitative": {
+    "_comment": "نمرهٔ سؤال‌های ۱ تا ۶ پرسش‌نامهٔ docs/specs/acceptance-testing.md، مقیاس ۱ تا ۵.",
+    "employer_scores": [
+      { "project_id": "P01", "scores": [5, 4, 4, 5, 4, 4], "open_answer": "بخش تأسیسات را خوب نفهمیدم، بقیه واضح بود." },
+      { "project_id": "P02", "scores": [5, 5, 4, 4, 5, 4], "open_answer": "نفهمیدم چرا کابینت جزو «کابینت و درب» است و نه آشپزخانه." },
+      { "project_id": "P03", "scores": [4, 4, 3, 4, 4, 4], "open_answer": "عایق رطوبتی را نمی‌دانستم چیست." },
+      { "project_id": "P04", "scores": [4, 5, 3, 4, 4, 3], "open_answer": "تفاوت چهار سناریو اول گیجم کرد." },
+      { "project_id": "P05", "scores": [5, 4, 4, 5, 4, 4], "open_answer": "همه چیز واضح بود." },
+      { "project_id": "P06", "scores": [3, 4, 2, 3, 3, 3], "open_answer": "بازهٔ هزینه خیلی پهن بود و به کارم نیامد." },
+      { "project_id": "P07", "scores": [3, 4, 2, 4, 3, 3], "open_answer": "قیمت خیلی بالاتر از چیزی بود که مجری‌ها گفتند." },
+      { "project_id": "P08", "scores": [5, 5, 4, 5, 5, 5], "open_answer": "دقیقاً همان چیزی بود که لازم داشتم." },
+      { "project_id": "P09", "scores": [4, 5, 4, 4, 4, 4], "open_answer": "ترتیب کارها خیلی کمک کرد." },
+      { "project_id": "P10", "scores": [4, 4, 4, 4, 5, 4], "open_answer": "کاش می‌شد آیتم‌ها را خودم حذف کنم." }
+    ]
+  },
+  "contractor_feedback": [
+    { "contractor_id": "Q1", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" },
+    { "contractor_id": "Q2", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" },
+    { "contractor_id": "Q3", "understood_scope": true, "asked_extra_questions": true, "ambiguity": "مدل و برند کاشی مشخص نبود." },
+    { "contractor_id": "Q4", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" },
+    { "contractor_id": "Q5", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" },
+    { "contractor_id": "Q6", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" },
+    { "contractor_id": "Q7", "understood_scope": false, "asked_extra_questions": true, "ambiguity": "مشخص نبود تخریب تا کجا انجام می‌شود." },
+    { "contractor_id": "Q8", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" },
+    { "contractor_id": "Q9", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" },
+    { "contractor_id": "Q10", "understood_scope": true, "asked_extra_questions": false, "ambiguity": "" }
+  ]
+}

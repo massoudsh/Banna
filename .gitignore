@@ -17,9 +17,13 @@ dist/
 __pycache__/
 *.pyc
 
-# Generated artifacts (briefs و گزارش‌های اجرا — قابل بازتولید)
-outputs/
+# Generated artifacts (briefs — قابل بازتولید)
+outputs/*
 uploads/
+
+# گزارش‌های تحویل رسمی Issue #1 و #13 (بازتولید: python -m app.validation)
+!outputs/validation-report.md
+!outputs/acceptance-report.md
 
 # IDE
 .idea/

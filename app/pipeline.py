@@ -80,6 +80,11 @@ def _select(
     """انتخاب سناریو: بودجه اولویت دارد، در غیر این صورت سطح درخواستی."""
     if budget_toman:
         return scenario_engine.nearest_to_budget(scenarios, budget_toman)
+    # RENTAL هم tier اقتصادی دارد ولی آیتم حذف می‌کند؛ تطبیق نام سناریو مقدم است
+    # تا درخواست «اقتصادی» به‌اشتباه سناریوی اجاره‌ای برنگرداند.
+    for scenario in scenarios:
+        if scenario.kind.value == tier.value:
+            return scenario.kind
     by_tier = {s.tier: s.kind for s in scenarios}
     return by_tier.get(tier, ScenarioKind.STANDARD)
 
