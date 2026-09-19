@@ -39,6 +39,14 @@ uvicorn app.api.main:app
 هزینه و زمان همیشه **بازه** هستند، فرض‌ها صریح اعلام می‌شوند، و دادهٔ ناقص
 بی‌صدا حذف نمی‌شود. جزئیات: [[concepts/uncertainty-model]].
 
+## Next.js MVP surface
+یک سطح Next.js مستقل نیز برای دریافت ورودی پروژه، نمایش scope، WBS، متریال، تخمین و چهار سناریو اضافه شده است:
+- `app/page.tsx` — صفحهٔ خانه و CTAهای ورودی پروژه
+- `app/upload/page.tsx` — فرم آپلود و نمایش brief
+- `app/api/scope/route.ts` — API اعتبارسنجی و fallback محلی
+- `lib/project-intake.ts` — منطق Summary، WBS، تخمین و سناریوها
+- `lib/pricing-sources.ts` — provenance منابع قیمت تهران
+
 ## نقشهٔ راه فنی (خلاصه)
 - فاز ۱ — MVP ✅ پیاده‌سازی‌شده (بدون لایهٔ HTTP/UI).
 - فاز ۲ — Contractor Matching & Quote Normalization.

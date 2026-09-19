@@ -17,6 +17,14 @@
 ## Concepts (۱ صفحه)
 - [[concepts/uncertainty-model]] — اصل «همیشه بازه، فرض صریح، بدون حذف بی‌صدا»
 
+## Next.js MVP Entities
+- [[entities/project-intake]] — فرم و مدل یا entity ورودی پروژه، شامل نام پروژه، توضیح، بودجه، متراژ و فایل‌ها
+- [[entities/scope-api]] — مرز API پردازش scope و fallback محلی فعلی
+
+## Next.js MVP Concepts
+- [[concepts/brief-generation]] — منطق تبدیل ورودی پروژه به خلاصهٔ اولیهٔ scope و بودجه
+- [[concepts/tehran-pricing]] — تفکیک منبع رسمی دستمزد/اجرای دولت از قیمت بازار متریال تهران
+
 ## مرتبط
 - ویکی محصول (برای انسان/GitHub Wiki): `../wiki/Home.md`
 - بک‌لاگ Issueها: `../issues/README.md`
