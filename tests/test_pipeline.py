@@ -54,6 +54,22 @@ class TestPipelineEndToEnd:
         )
         assert result.selected == ScenarioKind.PREMIUM
 
+    def test_economy_tier_does_not_return_rental_scenario(self):
+        """رگرسیون: RENTAL هم tier اقتصادی دارد؛ تطبیق tier تنها، سناریوی اشتباه می‌دهد."""
+        result = run(
+            description="آشپزخانه و حمام و نشیمن بازسازی کامل",
+            total_area_m2=70,
+            tier=MaterialTier.ECONOMY,
+        )
+        assert result.selected == ScenarioKind.ECONOMY
+
+    def test_every_tier_maps_to_its_own_scenario_kind(self):
+        for tier in MaterialTier:
+            result = run(
+                description="آشپزخانه بازسازی کامل", total_area_m2=80, tier=tier
+            )
+            assert result.selected.value == tier.value, tier
+
     def test_budget_overrides_tier(self):
         """بودجه بر سطح درخواستی اولویت دارد."""
         result = run(
