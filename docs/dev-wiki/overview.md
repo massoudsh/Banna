@@ -4,22 +4,29 @@
 
 ## وضعیت فعلی کد
 فاز ۱ (Scope & Estimate Copilot) **پیاده‌سازی‌شده** است — موتورهای قاعده‌محور،
-قطعی و بدون نیاز به شبکه، با ۱۶۳ تست. هنوز لایهٔ HTTP/UI ساخته نشده؛ ورودی از
-CLI (`app/cli.py`) یا مستقیم از `app/pipeline.py`.
+قطعی و بدون نیاز به شبکه، با ۱۹۶ تست. لایهٔ HTTP/UI هم ساخته شده: آپلود →
+پردازش → نمایش چهار سناریو → دانلود Brief.
 
 ## پشتهٔ فنی
-Python 3.11+ · Pydantic v2 (مدل داده) · pytest. FastAPI برای API و SQLite برای
-ذخیره‌سازی در فاز بعد (تصمیم قفل‌شده: `../specs/architecture.md`).
+Python 3.11+ · Pydantic v2 (مدل داده) · FastAPI + uvicorn (لایهٔ HTTP) · pytest.
+ذخیره‌سازی در MVP **در حافظه** است؛ مهاجرت به SQLite/Postgres پیش از استقرار
+لازم است (تصمیم قفل‌شده: `../specs/architecture.md`).
 
 ## پوشه‌بندی
 ```
 app/models/domain.py    قرارداد داده بین موتورها (تنها منبع مجاز تبادل)
 app/engines/            هفت موتور: media, scope, wbs, material, estimate, scenario, brief
 app/pipeline.py         orchestrator زنجیره
+app/api/                لایهٔ FastAPI: main.py (routeها) + schemas.py + ui.py (صفحهٔ UI)
 app/cli.py              ورودی خط فرمان (banna-brief)
 data/                   wbs_reference.json + price_dataset.json
-tests/                  ۱۶۳ تست، بدون تماس شبکه
+tests/                  ۱۹۶ تست، بدون تماس شبکه
 docs/specs/             معماری، WBS مرجع، دیتاست قیمت، قفل دامنه، UI، تست پذیرش، مصاحبه
+```
+
+## اجرای سرویس
+```
+uvicorn app.api.main:app
 ```
 
 ## زنجیرهٔ فاز ۱

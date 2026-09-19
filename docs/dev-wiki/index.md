@@ -1,9 +1,10 @@
 # Index — دانش‌نامهٔ توسعهٔ بنّا
 
 ## Overview
-- [[overview]] — وضعیت فعلی (planning-only) و نقشهٔ راه فنی خلاصه
+- [[overview]] — معماری فاز ۱، پشتهٔ فنی، پوشه‌بندی و قدم بعدی
 
-## Entities (۷ صفحه)
+## Entities (۹ صفحه)
+- [[entities/api-layer]] — لایهٔ FastAPI (routeها، نگاشت خطا، صفحهٔ UI)
 - [[entities/pipeline]] — orchestrator زنجیرهٔ Scope→WBS→Material→Estimate→Scenario→Brief
 - [[entities/media-pipeline]] — دریافت/اعتبارسنجی/ذخیرهٔ امن ورودی چندرسانه‌ای (Issue #5)
 - [[entities/scope-engine]] — استخراج Scope از متن و رسانه (Issue #6)
