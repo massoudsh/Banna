@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:js && npm run test:py",
+    "test:js": "tsc -p tsconfig.test.json && node --test .test-build/lib",
+    "test:py": "python3 -m pytest -q"
   },
   "dependencies": {
     "next": "14.2.15",

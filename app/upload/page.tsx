@@ -86,16 +86,23 @@ export default function UploadPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('scope request failed');
+      const payload = await response.json();
 
-      const generatedSummary = (await response.json()) as ProjectSummary;
+      if (!response.ok) {
+        // پیام موتور (متراژ/توضیح نامعتبر یا نبود موتور) عیناً به کاربر نشان
+        // داده می‌شود؛ پیام عمومی جای آن نمی‌نشیند.
+        setError(typeof payload?.error === 'string' ? payload.error : 'پردازش پروژه انجام نشد.');
+        return;
+      }
+
+      const generatedSummary = payload as ProjectSummary;
       setSummary(generatedSummary);
       window.localStorage.setItem(
         SAVED_PROJECT_KEY,
         JSON.stringify({ projectName, description, budget, surfaceArea, summary: generatedSummary }),
       );
     } catch {
-      setError('پردازش پروژه انجام نشد. لطفاً دوباره تلاش کنید.');
+      setError('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.');
     } finally {
       setIsSubmitting(false);
     }
@@ -185,8 +192,19 @@ export default function UploadPage() {
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-brand-600">Scope Preview</p>
             <h2 className="mt-3 text-2xl font-black text-stone-900">{summary.title}</h2>
             <p className="mt-2 text-xs text-stone-500">
-              {summary.source === 'ai' ? 'تحلیل‌شده با AI' : 'پیش‌نمایش محلی؛ آماده اتصال به مدل AI'}
+              {summary.source === 'engine' ? 'محاسبه‌شده با موتور تخمین بنّا' : 'موتور در دسترس نبود'}
             </p>
+
+            {summary.warnings.length ? (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-900">فرض‌ها و هشدارها</p>
+                <ul className="mt-2 space-y-1 text-sm leading-6 text-amber-900">
+                  {summary.warnings.map((warning) => (
+                    <li key={warning}>• {warning}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             <div className="mt-5 grid gap-5 md:grid-cols-2">
               <div className="rounded-2xl bg-white p-4 shadow-sm">
