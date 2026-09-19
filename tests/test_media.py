@@ -54,9 +54,23 @@ class TestValidateRequest:
         with pytest.raises(MediaValidationError, match="۱۰۰۰"):
             validate_request(area_m2=5000, media_count=3)
 
-    def test_requires_at_least_one_media(self):
-        with pytest.raises(MediaValidationError, match="عکس"):
-            validate_request(area_m2=80, media_count=0)
+    def test_media_is_optional_when_area_given(self):
+        """رسانه اختیاری است؛ متراژ تنها کافی است."""
+        validate_request(area_m2=80, media_count=0)
+
+    def test_media_is_optional_when_description_given(self):
+        validate_request(area_m2=None, media_count=0, description="آشپزخانه بازسازی کامل")
+
+    def test_rejects_when_no_input_at_all(self):
+        with pytest.raises(MediaValidationError, match="حداقل"):
+            validate_request(area_m2=None, media_count=0, description="   ")
+
+    def test_blank_description_treated_as_absent(self):
+        with pytest.raises(MediaValidationError, match="حداقل"):
+            validate_request(area_m2=None, media_count=0, description="")
+
+    def test_accepts_media_alone(self):
+        validate_request(area_m2=None, media_count=2)
 
 
 class TestStoreAsset:
