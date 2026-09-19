@@ -17,6 +17,10 @@ dist/
 __pycache__/
 *.pyc
 
+# Generated artifacts (briefs و گزارش‌های اجرا — قابل بازتولید)
+outputs/
+uploads/
+
 # IDE
 .idea/
 .vscode/
