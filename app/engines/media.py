@@ -69,11 +69,20 @@ def store_asset(
     )
 
 
-def validate_request(*, area_m2: float, media_count: int) -> None:
-    """اعتبارسنجی ورودی فرم پروژه (Issue #5)."""
-    if area_m2 <= 0:
+def validate_request(
+    *, area_m2: float | None, media_count: int, description: str = ""
+) -> None:
+    """اعتبارسنجی ورودی فرم پروژه (Issue #5).
+
+    رسانه و متراژ هر دو اختیاری‌اند، ولی **حداقل یکی از سه ورودی** (رسانه،
+    متراژ، توضیح متنی) باید وجود داشته باشد؛ در غیر این صورت چیزی برای پردازش
+    نیست و خطا باید به کاربر گفته شود نه اینکه تخمین بی‌مبنا تولید شود.
+    """
+    if area_m2 is not None and area_m2 <= 0:
         raise MediaValidationError("متراژ باید بزرگ‌تر از صفر باشد.")
-    if area_m2 > 1000:
+    if area_m2 is not None and area_m2 > 1000:
         raise MediaValidationError("متراژ بیش از ۱۰۰۰ مترمربع خارج از دامنهٔ MVP است.")
-    if media_count == 0:
-        raise MediaValidationError("حداقل یک عکس یا ویدیو از فضا لازم است.")
+    if media_count == 0 and area_m2 is None and not description.strip():
+        raise MediaValidationError(
+            "برای شروع، حداقل متراژ یا توضیح پروژه لازم است (عکس/ویدیو اختیاری است)."
+        )
