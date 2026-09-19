@@ -1,0 +1,4 @@
+# وابستگی‌های بنّا (فاز ۱ — Scope & Estimate Copilot)
+# نصب: pip install -r requirements-dev.txt
+
+pydantic>=2.0,<3.0

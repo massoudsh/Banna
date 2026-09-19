@@ -51,11 +51,17 @@ def run(
     vision_analyzer=None,
     tier: MaterialTier = MaterialTier.STANDARD,
 ) -> PipelineResult:
-    """اجرای کامل pipeline: متن/رسانه → Scope → WBS → متریال → سناریوها."""
+    """اجرای کامل pipeline: متن/رسانه → Scope → WBS → متریال → سناریوها.
+
+    `tier` سناریوی پیش‌فرض انتخابی را تعیین می‌کند. اگر بودجهٔ کاربر اعلام شده
+    باشد، انتخاب بر اساس بودجه انجام می‌شود و `tier` نادیده گرفته می‌شود.
+    """
     scope = scope_engine.analyze_with_vision(
         assets or [], description, analyzer=vision_analyzer, total_area_m2=total_area_m2
     )
     wbs = wbs_engine.generate(scope)
+    # متریال هر سناریو مستقل و بر پایهٔ سطح خودش محاسبه می‌شود؛ این فراخوانی
+    # فقط برای پرکردن متریال WBS پایه و گزارش آیتم‌های بدون قیمت است.
     priced, missing = material_engine.apply(wbs, tier)
     scenarios = scenario_engine.build_all(priced)
 
@@ -63,9 +69,19 @@ def run(
         scope=scope,
         wbs=priced,
         scenarios=scenarios,
-        selected=scenario_engine.nearest_to_budget(scenarios, scope.budget_toman),
+        selected=_select(scenarios, scope.budget_toman, tier),
         missing_price_codes=missing,
     )
+
+
+def _select(
+    scenarios: list[Scenario], budget_toman: int | None, tier: MaterialTier
+) -> ScenarioKind:
+    """انتخاب سناریو: بودجه اولویت دارد، در غیر این صورت سطح درخواستی."""
+    if budget_toman:
+        return scenario_engine.nearest_to_budget(scenarios, budget_toman)
+    by_tier = {s.tier: s.kind for s in scenarios}
+    return by_tier.get(tier, ScenarioKind.STANDARD)
 
 
 def render_brief(result: PipelineResult, title: str) -> str:
