@@ -3,11 +3,18 @@
 ## Overview
 - [[overview]] — وضعیت فعلی (planning-only) و نقشهٔ راه فنی خلاصه
 
-## Entities (۰ صفحه)
-- هنوز چیزی ثبت نشده — اولین entity با شروع پیاده‌سازی فاز ۱ اضافه می‌شود.
+## Entities (۷ صفحه)
+- [[entities/pipeline]] — orchestrator زنجیرهٔ Scope→WBS→Material→Estimate→Scenario→Brief
+- [[entities/media-pipeline]] — دریافت/اعتبارسنجی/ذخیرهٔ امن ورودی چندرسانه‌ای (Issue #5)
+- [[entities/scope-engine]] — استخراج Scope از متن و رسانه (Issue #6)
+- [[entities/wbs-engine]] — تولید WBS با ترتیب فازها و وابستگی‌ها (Issue #7)
+- [[entities/material-engine]] — نگاشت WBS به متریال قیمت‌گذاری‌شده (Issue #8)
+- [[entities/estimate-engine]] — تخمین بازهٔ هزینه و زمان (Issue #9)
+- [[entities/scenario-engine]] — چهار سناریوی خروجی (Issue #10)
+- [[entities/brief-renderer]] — تولید HTML/PDF فارسی قابل‌اشتراک (Issue #11)
 
-## Concepts (۰ صفحه)
-- هنوز چیزی ثبت نشده.
+## Concepts (۱ صفحه)
+- [[concepts/uncertainty-model]] — اصل «همیشه بازه، فرض صریح، بدون حذف بی‌صدا»
 
 ## مرتبط
 - ویکی محصول (برای انسان/GitHub Wiki): `../wiki/Home.md`
