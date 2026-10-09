@@ -3,7 +3,7 @@ name = "banna"
 version = "0.1.0"
 description = "کوپایلوت هوشمند برنامه‌ریزی و اجرای بازسازی — Scope & Estimate Copilot"
 requires-python = ">=3.11"
-dependencies = ["pydantic>=2.0,<3.0"]
+dependencies = ["pydantic>=2.13.5,<3.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
