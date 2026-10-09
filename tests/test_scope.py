@@ -13,7 +13,7 @@ from app.engines.scope import (
     parse_budget,
     parse_total_area,
 )
-from app.models.domain import Condition, MediaAsset, ScopeSummary, SpaceType, WorkPhase
+from app.models.domain import Condition, MediaAsset, ScopeSummary, SpaceObservation, SpaceType, WorkPhase
 
 
 class TestSpaceDetection:
@@ -150,6 +150,24 @@ class _FakeAnalyzer:
         return ScopeSummary(spaces=[], style="fake")
 
 
+class _VisualKitchenAnalyzer:
+    def observe(self, assets, text):
+        return ScopeSummary(
+            spaces=[
+                SpaceObservation(
+                    space=SpaceType.KITCHEN,
+                    area_m2=20,
+                    condition=Condition.POOR,
+                    confidence=0.95,
+                    requested_works=[WorkPhase.MEP],
+                    notes="لوله‌کشی قابل مشاهده فرسوده است.",
+                )
+            ],
+            style="classic",
+            assumptions=["نتیجهٔ تحلیل تصویر نمونه است."],
+        )
+
+
 class _BrokenAnalyzer:
     def observe(self, assets, text):
         raise RuntimeError("vision API down")
@@ -165,6 +183,17 @@ class TestVisionFallback:
     def test_uses_analyzer_when_provided(self):
         result = analyze_with_vision([_asset()], "آشپزخانه", analyzer=_FakeAnalyzer())
         assert result.style == "fake"
+
+    def test_merges_visual_observations_without_losing_textual_work(self):
+        result = analyze_with_vision(
+            [_asset()], "آشپزخانه قدیمی با رنگ", analyzer=_VisualKitchenAnalyzer(), total_area_m2=80
+        )
+        kitchen = result.spaces[0]
+        assert kitchen.condition is Condition.POOR
+        assert kitchen.confidence == 0.95
+        assert set(kitchen.requested_works) == {WorkPhase.FINISH, WorkPhase.MEP}
+        assert "لوله‌کشی" in kitchen.notes
+        assert any("ترکیب شد" in assumption for assumption in result.assumptions)
 
     def test_falls_back_on_analyzer_failure(self):
         result = analyze_with_vision(

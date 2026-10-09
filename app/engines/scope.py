@@ -243,6 +243,31 @@ def analyze(text: str, *, total_area_m2: float | None = None) -> ScopeSummary:
     )
 
 
+def _merge_observations(text_scope: ScopeSummary, vision_scope: ScopeSummary) -> ScopeSummary:
+    """مشاهدهٔ بصری را بدون حذف خواستهٔ صریح کاربر به Scope متنی اضافه می‌کند."""
+    observations = {item.space: item.model_copy(deep=True) for item in text_scope.spaces}
+    for observed in vision_scope.spaces:
+        existing = observations.get(observed.space)
+        if existing is None:
+            observations[observed.space] = observed
+            continue
+        works = list(dict.fromkeys([*existing.requested_works, *observed.requested_works]))
+        observations[observed.space] = existing.model_copy(
+            update={
+                "condition": observed.condition if observed.confidence >= existing.confidence else existing.condition,
+                "confidence": max(existing.confidence, observed.confidence),
+                "requested_works": works,
+                "notes": "\n".join(note for note in (existing.notes, observed.notes) if note),
+            }
+        )
+    return ScopeSummary(
+        spaces=list(observations.values()),
+        style=vision_scope.style or text_scope.style,
+        budget_toman=text_scope.budget_toman,
+        assumptions=[*text_scope.assumptions, *vision_scope.assumptions, "مشاهدات تصویری با توضیح کارفرما ترکیب شد."],
+    )
+
+
 def analyze_with_vision(
     assets: list[MediaAsset],
     text: str,
@@ -253,7 +278,9 @@ def analyze_with_vision(
     """مسیر تحلیل بصری با fallback شفاف به قاعده‌محور."""
     if analyzer is not None and assets:
         try:
-            return analyzer.observe(assets, text)
+            text_scope = analyze(text, total_area_m2=total_area_m2)
+            vision_scope = analyzer.observe(assets, text)
+            return _merge_observations(text_scope, vision_scope)
         except Exception as exc:  # noqa: BLE001 — هر خطای adapter نباید جریان را قطع کند
             summary = analyze(text, total_area_m2=total_area_m2)
             summary.assumptions.append(
