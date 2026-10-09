@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "case_id": "full-kitchen-bathroom",
+      "text": "آشپزخانه و حمام قدیمی را با سبک مدرن بازسازی کامل می‌خواهم",
+      "expected_spaces": ["kitchen", "bathroom"],
+      "expected_works": ["demolition", "mep", "structure", "covering", "joinery", "finish"],
+      "expected_style": "modern",
+      "expected_condition": "poor"
+    },
+    {
+      "case_id": "living-room-finish",
+      "text": "پذیرایی سالم است و فقط رنگ و نورپردازی لوکس لازم دارد",
+      "expected_spaces": ["living_room"],
+      "expected_works": ["finish"],
+      "expected_style": "luxury",
+      "expected_condition": "good"
+    },
+    {
+      "case_id": "bedroom-covering",
+      "text": "اتاق خواب معمولی است؛ پارکت و کاغذ دیواری می‌خواهم",
+      "expected_spaces": ["bedroom"],
+      "expected_works": ["covering"],
+      "expected_style": "modern",
+      "expected_condition": "fair"
+    }
+  ]
+}

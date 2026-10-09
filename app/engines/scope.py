@@ -98,7 +98,19 @@ def detect_works(text: str) -> list[WorkPhase]:
     """
     if any(k in text for k in FULL_SCOPE_KEYWORDS):
         return list(WorkPhase)
-    found = [phase for phase, kws in WORK_KEYWORDS if any(k in text for k in kws)]
+    found = [
+        phase
+        for phase, kws in WORK_KEYWORDS
+        if any(
+            keyword in text
+            and not (
+                phase is WorkPhase.STRUCTURE
+                and keyword == "دیوار"
+                and "کاغذ دیواری" in text
+            )
+            for keyword in kws
+        )
+    ]
     return found or [WorkPhase.COVERING, WorkPhase.FINISH]
 
 
