@@ -258,6 +258,29 @@ class QuoteComparison(BaseModel):
     spread_is_stable: bool = True
 
 
+class EscrowMilestone(BaseModel):
+    """مبلغ امانی یک مایلستون WBS؛ جابه‌جایی پول خارج از دامنهٔ MVP است."""
+
+    milestone_id: str
+    project_id: str
+    wbs_code: str
+    amount_toman: int = Field(gt=0)
+    status: Literal["pending", "released", "blocked", "refunded"] = "pending"
+    dispute_reason: str = ""
+
+
+class FinancingOption(BaseModel):
+    """گزینهٔ محاسباتی تأمین مالی؛ پیشنهاد یا تأیید اعتباری نیست."""
+
+    scenario_kind: ScenarioKind
+    cash_contribution_toman: int = Field(ge=0)
+    financed_amount_toman: int = Field(ge=0)
+    installment_months: int = Field(gt=0)
+    monthly_payment_toman: int = Field(ge=0)
+    total_repayment_toman: int = Field(ge=0)
+    assumptions: list[str] = Field(default_factory=list)
+
+
 class ContractorProfile(BaseModel):
     """پروفایل مجری برای matching و رتبه‌بندی (Issue #14)."""
 

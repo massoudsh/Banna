@@ -9,10 +9,13 @@
 
 from __future__ import annotations
 
+import json
+import logging
+import time
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.api import ui
@@ -22,10 +25,13 @@ from app.api.schemas import (
     ScenarioOut,
     SpaceOut,
     WBSItemOut,
+    DisputeIn,
 )
 from app.engines import brief as brief_engine
 from app.engines import quote as quote_engine
 from app.engines import contractor as contractor_engine
+from app.engines import escrow as escrow_engine
+from app.engines import financing as financing_engine
 from app.engines.media import MediaValidationError, store_asset, validate_request
 from app.engines.scope import ScopeError
 from app.engines.wbs import WBSError
@@ -41,6 +47,8 @@ from app.models.domain import (
     ContractorRanking,
     ProjectExecutionChecklist,
     ChecklistItem,
+    EscrowMilestone,
+    FinancingOption,
 )
 from app.pipeline import PipelineResult, run
 
@@ -67,6 +75,28 @@ app = FastAPI(
 )
 
 app.include_router(ui.router)
+logger = logging.getLogger("banna.http")
+
+
+@app.middleware("http")
+async def log_http_request(request, call_next):
+    """ثبت ساختاریافتهٔ درخواست بدون متن خام کاربر یا نام فایل‌ها."""
+    started = time.perf_counter()
+    response = await call_next(request)
+    logger.info(
+        json.dumps(
+            {
+                "event": "http_request",
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+            },
+            ensure_ascii=False,
+        )
+    )
+    return response
+
 
 # حافظهٔ موقت پروژه‌ها (MVP). کلید: project_id
 _PROJECTS: dict[str, PipelineResult] = {}
@@ -75,6 +105,7 @@ _QUOTES: dict[str, list[ContractorQuote]] = {}
 _CONTRACTORS: dict[str, ContractorProfile] = {}
 _REVIEWS: list[ContractorReview] = []
 _CHECKLISTS: dict[str, ProjectExecutionChecklist] = {}
+_ESCROW: dict[str, dict[str, EscrowMilestone]] = {}
 
 
 @app.exception_handler(MediaValidationError)
@@ -242,6 +273,75 @@ async def update_checklist(project_id: str, checklist: ProjectExecutionChecklist
         raise HTTPException(status_code=422, detail="چک‌لیست شامل کد WBS ناشناخته است.")
     _CHECKLISTS[project_id] = checklist
     return checklist
+
+
+@app.post("/api/projects/{project_id}/escrow", response_model=EscrowMilestone, status_code=201)
+async def create_escrow_milestone(project_id: str, milestone: EscrowMilestone) -> EscrowMilestone:
+    result = _PROJECTS.get(project_id)
+    if result is None or milestone.project_id != project_id:
+        raise HTTPException(status_code=404, detail="پروژه پیدا نشد.")
+    if milestone.wbs_code not in {item.code for item in result.wbs.items}:
+        raise HTTPException(status_code=422, detail="مایلستون به کد WBS ناشناخته متصل است.")
+    _ESCROW.setdefault(project_id, {})[milestone.milestone_id] = milestone
+    return milestone
+
+
+@app.post("/api/projects/{project_id}/escrow/{milestone_id}/release", response_model=EscrowMilestone)
+async def release_escrow_milestone(project_id: str, milestone_id: str) -> EscrowMilestone:
+    milestone = _ESCROW.get(project_id, {}).get(milestone_id)
+    if milestone is None:
+        raise HTTPException(status_code=404, detail="مایلستون امانی پیدا نشد.")
+    checklist = await get_checklist(project_id)
+    try:
+        released = escrow_engine.release(milestone, checklist)
+    except escrow_engine.EscrowError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    _ESCROW[project_id][milestone_id] = released
+    return released
+
+
+@app.post("/api/projects/{project_id}/escrow/{milestone_id}/block", response_model=EscrowMilestone)
+async def block_escrow_milestone(project_id: str, milestone_id: str, dispute: DisputeIn) -> EscrowMilestone:
+    milestone = _ESCROW.get(project_id, {}).get(milestone_id)
+    if milestone is None:
+        raise HTTPException(status_code=404, detail="مایلستون امانی پیدا نشد.")
+    try:
+        blocked = escrow_engine.block(milestone, dispute.reason)
+    except escrow_engine.EscrowError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    _ESCROW[project_id][milestone_id] = blocked
+    return blocked
+
+
+@app.post("/api/projects/{project_id}/escrow/{milestone_id}/refund", response_model=EscrowMilestone)
+async def refund_escrow_milestone(project_id: str, milestone_id: str) -> EscrowMilestone:
+    milestone = _ESCROW.get(project_id, {}).get(milestone_id)
+    if milestone is None:
+        raise HTTPException(status_code=404, detail="مایلستون امانی پیدا نشد.")
+    try:
+        refunded = escrow_engine.refund(milestone)
+    except escrow_engine.EscrowError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    _ESCROW[project_id][milestone_id] = refunded
+    return refunded
+
+
+@app.get("/api/projects/{project_id}/financing", response_model=list[FinancingOption])
+async def get_financing_options(
+    project_id: str,
+    cash_toman: int = Query(..., ge=0),
+    installment_months: int = Query(12, ge=1, le=84),
+    annual_rate_pct: float = Query(0, ge=0, le=100),
+) -> list[FinancingOption]:
+    result = _PROJECTS.get(project_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="پروژه پیدا نشد.")
+    return financing_engine.options_for(
+        result.scenarios,
+        cash_toman=cash_toman,
+        installment_months=installment_months,
+        annual_rate_pct=annual_rate_pct,
+    )
 
 
 @app.get("/api/projects/{project_id}/brief", response_class=HTMLResponse)

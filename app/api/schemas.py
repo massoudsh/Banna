@@ -57,6 +57,10 @@ class ProjectOut(BaseModel):
     brief_url: str
 
 
+class DisputeIn(BaseModel):
+    reason: str = Field(min_length=1)
+
+
 class ErrorOut(BaseModel):
     """خطای قابل‌نمایش به کاربر — همیشه فارسی و قابل‌فهم."""
 

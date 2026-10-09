@@ -99,6 +99,14 @@ class TestCreateProject:
     def test_brief_url_returned(self, client):
         data = _create(client)
         assert data["brief_url"] == f"/api/projects/{data['project_id']}/brief"
+    def test_http_logs_exclude_user_description(self, client, caplog):
+        caplog.set_level("INFO", logger="banna.http")
+        description = "متن محرمانهٔ بازسازی"
+        response = client.post("/api/projects", data={**VALID, "description": description})
+        assert response.status_code == 201
+        log = next(record.message for record in caplog.records if "http_request" in record.message)
+        assert description not in log
+        assert '"path": "/api/projects"' in log
 
 
 class TestValidationErrors:
@@ -239,6 +247,37 @@ class TestContractorsAndChecklist:
         response = client.put(f"/api/projects/{created['project_id']}/checklist", json=payload)
         assert response.status_code == 200
         assert response.json()["items"][0]["change_order_toman"] == 5000000
+    def test_escrow_releases_only_after_evidence(self, client):
+        created = _create(client)
+        code = created["wbs_items"][0]["code"]
+        milestone = {
+            "milestone_id": "esc-1", "project_id": created["project_id"],
+            "wbs_code": code, "amount_toman": 10_000_000,
+        }
+        assert client.post(f"/api/projects/{created['project_id']}/escrow", json=milestone).status_code == 201
+        release = client.post(f"/api/projects/{created['project_id']}/escrow/esc-1/release")
+        assert release.status_code == 422
+
+        checklist = {"project_id": created["project_id"], "items": [{"wbs_code": code, "status": "done", "evidence_filenames": ["done.jpg"]}]}
+        assert client.put(f"/api/projects/{created['project_id']}/checklist", json=checklist).status_code == 200
+        release = client.post(f"/api/projects/{created['project_id']}/escrow/esc-1/release")
+        assert release.status_code == 200
+        assert release.json()["status"] == "released"
+
+    def test_escrow_dispute_can_be_refunded(self, client):
+        created = _create(client)
+        milestone = {
+            "milestone_id": "esc-2", "project_id": created["project_id"],
+            "wbs_code": created["wbs_items"][0]["code"], "amount_toman": 10_000_000,
+        }
+        url = f"/api/projects/{created['project_id']}/escrow"
+        assert client.post(url, json=milestone).status_code == 201
+        block = client.post(f"{url}/esc-2/block", json={"reason": "اختلاف در کیفیت اجرا"})
+        assert block.status_code == 200
+        assert block.json()["status"] == "blocked"
+        refund = client.post(f"{url}/esc-2/refund")
+        assert refund.status_code == 200
+        assert refund.json()["status"] == "refunded"
 
 
 class TestQuoteEndpoints:

@@ -6,6 +6,8 @@ outside the domain layer. The adapter accepts only schema-valid JSON responses.
 
 from __future__ import annotations
 
+from pathlib import Path
+import subprocess
 from typing import Protocol
 
 from app.models.domain import MediaAsset, ScopeSummary
@@ -26,6 +28,37 @@ confidence بین ۰ و ۱ است. requested_works فقط demolition/mep/structu
 """
 
 
+class VisionPreparationError(RuntimeError):
+    """ویدیو پیش از ارسال به provider به فریم قابل‌تحلیل تبدیل نشد."""
+
+
+def extract_video_keyframes(asset: MediaAsset, *, max_frames: int = 6) -> list[str]:
+    """فریم‌های پراکندهٔ ویدیو را با ffmpeg برای تحلیل چندوجهی استخراج می‌کند."""
+    if not asset.is_video:
+        return [asset.stored_path]
+    source = Path(asset.stored_path)
+    frame_dir = source.parent / f"{source.stem}-frames"
+    frame_dir.mkdir(exist_ok=True)
+    pattern = frame_dir / "frame-%02d.jpg"
+    try:
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-i", str(source), "-vf", "fps=1/5,scale=min(1280\\,iw):-2",
+                "-frames:v", str(max_frames), str(pattern),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (FileNotFoundError, subprocess.SubprocessError) as exc:
+        raise VisionPreparationError("استخراج فریم کلیدی ویدیو ناموفق بود.") from exc
+    frames = sorted(str(frame) for frame in frame_dir.glob("frame-*.jpg"))
+    if not frames:
+        raise VisionPreparationError("هیچ فریم قابل‌تحلیلی از ویدیو استخراج نشد.")
+    return frames
+
+
 class StructuredVisionAnalyzer:
     """Converts a provider's JSON response into the project's ScopeSummary contract."""
 
@@ -35,6 +68,6 @@ class StructuredVisionAnalyzer:
     def observe(self, assets: list[MediaAsset], text: str) -> ScopeSummary:
         response = self._client.complete_json(
             prompt=f"{SCOPE_PROMPT}\n{text}",
-            asset_paths=[asset.stored_path for asset in assets],
+            asset_paths=[path for asset in assets for path in extract_video_keyframes(asset)],
         )
         return ScopeSummary.model_validate(response)
